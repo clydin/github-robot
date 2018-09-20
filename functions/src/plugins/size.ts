@@ -87,7 +87,7 @@ export class SizeTask extends Task {
 
     const { owner, repo } = context.repo();
     const buildNumber = this.getBuildNumberFromCircleCIUrl(statusEvent.target_url);
-    
+
     let newArtifacts;
     try {
       newArtifacts = await this.getCircleCIArtifacts(owner, repo, buildNumber);
@@ -107,7 +107,16 @@ export class SizeTask extends Task {
     if (!pr) {
       // this status doesn't have a PR therefore it's probably a commit to a branch
       // so we want to store any changes from that commit
-      return this.upsertNewArtifacts(context, newArtifacts);
+      await this.upsertNewArtifacts(context, newArtifacts);
+
+      await this.setStatus(
+        STATUS_STATE.Success,
+        `Baseline saved for ${statusEvent.sha}`,
+        config.status.context,
+        context,
+      );
+
+      return;
     }
 
     this.logDebug(`[size] Processing PR: ${pr.title}`);
